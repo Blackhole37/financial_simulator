@@ -987,33 +987,6 @@ def goal_tracker_node(state: FinancialSimulationState) -> FinancialSimulationSta
         "goal_tracking_context": f"Enhanced goal tracking for month {month}"
     }
 
-        # Save to MongoDB
-        agent_name = "goal_tracker"
-        save_agent_output(
-            user_id=user_id,
-            simulation_id=state["simulation_id"],
-            month=month,
-            agent_name=agent_name,
-            output_data=result[0] if result else {}
-        )
-        print(f"💾 Saved {agent_name} output to MongoDB for month {month}")
-
-        # Update state
-        return {
-            **state,
-            "goal_tracking_result": result,
-            "goal_tracking_context": goal_context
-        }
-    except Exception as e:
-        print(f"❌ Error in goal_tracker_node: {e}")
-        # Create a fallback result
-        fallback = create_fallback_json(month, "goal_tracker", state["user_inputs"])
-        return {
-            **state,
-            "goal_tracking_result": [fallback],
-            "goal_tracking_context": goal_context
-        }
-
 def behavior_tracker_node(state: FinancialSimulationState) -> FinancialSimulationState:
     """Track financial behavior for the current month."""
     print(f"🟢 Executing task: behavior_tracker for month {state['month_number']}")
@@ -1405,45 +1378,6 @@ def financial_strategy_node(state: FinancialSimulationState) -> FinancialSimulat
         "financial_strategy_result": result_list,
         "financial_strategy_context": f"Enhanced financial strategy for month {month}"
     }
-        output_path = f"output/{user_id}_financial_strategy_simulation.json"
-
-        # Ensure it's a list with the month number
-        if isinstance(result, dict):
-            result["month"] = month
-            result = [result]
-        elif isinstance(result, list) and result:
-            for item in result:
-                if isinstance(item, dict):
-                    item["month"] = month
-
-        deduplicate_and_save(output_path, result)
-
-        # Save to MongoDB
-        agent_name = "financial_strategy"
-        save_agent_output(
-            user_id=user_id,
-            simulation_id=state["simulation_id"],
-            month=month,
-            agent_name=agent_name,
-            output_data=result[0] if result else {}
-        )
-        print(f"💾 Saved {agent_name} output to MongoDB for month {month}")
-
-        # Update state
-        return {
-            **state,
-            "financial_strategy_result": result,
-            "financial_strategy_context": strategy_context
-        }
-    except Exception as e:
-        print(f"❌ Error in financial_strategy_node: {e}")
-        # Create a fallback result
-        fallback = create_fallback_json(month, "financial_strategy", state["user_inputs"])
-        return {
-            **state,
-            "financial_strategy_result": [fallback],
-            "financial_strategy_context": strategy_context
-        }
 
 # Define the LangGraph workflow
 def create_financial_simulation_graph():
