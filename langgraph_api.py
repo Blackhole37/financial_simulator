@@ -1187,6 +1187,8 @@ def main():
 
 # If you want to run with `python langgraph_api.py`
 if __name__ == "__main__":
-    uvicorn.run("langgraph_api:app", host="0.0.0.0", port=8002, reload=False)
+    import os
+    port = int(os.environ.get("PORT", 8002))
+    uvicorn.run("langgraph_api:app", host="0.0.0.0", port=port, reload=False)
 
 
