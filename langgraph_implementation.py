@@ -986,18 +986,6 @@ def goal_tracker_node(state: FinancialSimulationState) -> FinancialSimulationSta
         "goal_tracking_result": result_list,
         "goal_tracking_context": f"Enhanced goal tracking for month {month}"
     }
-        output_path = f"output/{user_id}_goal_status_simulation.json"
-
-        # Ensure it's a list with the month number
-        if isinstance(result, dict):
-            result["month"] = month
-            result = [result]
-        elif isinstance(result, list) and result:
-            for item in result:
-                if isinstance(item, dict):
-                    item["month"] = month
-
-        deduplicate_and_save(output_path, result)
 
         # Save to MongoDB
         agent_name = "goal_tracker"
