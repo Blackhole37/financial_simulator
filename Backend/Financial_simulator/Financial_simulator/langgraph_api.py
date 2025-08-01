@@ -16,7 +16,6 @@ import uuid
 import shutil
 from pathlib import Path
 from dotenv import load_dotenv
-import uvicorn
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import agentops
