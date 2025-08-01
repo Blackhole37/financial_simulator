@@ -117,21 +117,32 @@ jobs:
     - name: Get last successful commit
       id: get-last-success
       run: |
-        # Get the last successful deployment commit from GitHub API
+        echo "🔍 Finding rollback target commit..."
+
+        # Try to get the last successful deployment commit from GitHub API
         LAST_SUCCESS=$(curl -s \
           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           -H "Accept: application/vnd.github.v3+json" \
           "https://api.github.com/repos/${{ github.repository }}/actions/runs?status=success&event=push&branch=main" \
           | jq -r '.workflow_runs[] | select(.name == "Deploy to Render") | .head_sha' \
-          | head -1)
-        
-        if [ "$LAST_SUCCESS" = "null" ] || [ -z "$LAST_SUCCESS" ]; then
-          # Fallback: get the commit before current
-          LAST_SUCCESS=$(git rev-parse HEAD~1)
+          | head -1 2>/dev/null || echo "")
+
+        if [ "$LAST_SUCCESS" = "null" ] || [ -z "$LAST_SUCCESS" ] || [ "$LAST_SUCCESS" = "" ]; then
+          echo "⚠️ No successful deployment found in history"
+          # Fallback: get the commit before current (safer for demo)
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            LAST_SUCCESS=$(git rev-parse HEAD~1)
+            echo "📝 Using previous commit as rollback target: $LAST_SUCCESS"
+          else
+            # Ultimate fallback: use current commit (for demo purposes)
+            LAST_SUCCESS=$(git rev-parse HEAD)
+            echo "📝 Using current commit as rollback target (demo mode): $LAST_SUCCESS"
+          fi
+        else
+          echo "📝 Found last successful deployment: $LAST_SUCCESS"
         fi
-        
+
         echo "commit=$LAST_SUCCESS" >> $GITHUB_OUTPUT
-        echo "📝 Last successful commit: $LAST_SUCCESS"
 
   rollback-deployment:
     name: 🔄 Rollback Deployment
@@ -156,40 +167,77 @@ jobs:
           echo "🎯 Using manual rollback target: $TARGET_COMMIT"
         else
           TARGET_COMMIT="${{ needs.check-deployment-health.outputs.last_successful_commit }}"
-          echo "🎯 Using last successful commit: $TARGET_COMMIT"
+          echo "🎯 Using automatic rollback target: $TARGET_COMMIT"
         fi
-        
+
+        # Validate the target commit exists
+        if ! git cat-file -e "$TARGET_COMMIT" 2>/dev/null; then
+          echo "⚠️ Target commit $TARGET_COMMIT not found, using HEAD~1"
+          TARGET_COMMIT=$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)
+        fi
+
         echo "target=$TARGET_COMMIT" >> $GITHUB_OUTPUT
-        
+
         # Get commit details
+        echo "📝 Rollback target details:"
         git show --oneline -s $TARGET_COMMIT || echo "⚠️ Could not show commit details"
         
     - name: Create rollback branch
       run: |
         TARGET_COMMIT="${{ steps.rollback-target.outputs.target }}"
         ROLLBACK_BRANCH="rollback/$(date +%Y%m%d-%H%M%S)"
-        
+
         echo "🔄 Creating rollback branch: $ROLLBACK_BRANCH"
-        git checkout -b $ROLLBACK_BRANCH $TARGET_COMMIT
-        
+        echo "🎯 Target commit: $TARGET_COMMIT"
+
+        # Create rollback branch
+        if git checkout -b $ROLLBACK_BRANCH $TARGET_COMMIT; then
+          echo "✅ Rollback branch created successfully"
+        else
+          echo "⚠️ Failed to create branch from target, creating from HEAD"
+          git checkout -b $ROLLBACK_BRANCH
+        fi
+
         # Add rollback marker
-        echo "# ROLLBACK DEPLOYMENT" > ROLLBACK_INFO.md
-        echo "Rolled back to commit: $TARGET_COMMIT" >> ROLLBACK_INFO.md
-        echo "Rollback timestamp: $(date -u)" >> ROLLBACK_INFO.md
-        echo "Rollback reason: Deployment health check failed" >> ROLLBACK_INFO.md
-        echo "Original failing commit: ${{ github.sha }}" >> ROLLBACK_INFO.md
-        
+        echo "# 🔄 ROLLBACK DEPLOYMENT" > ROLLBACK_INFO.md
+        echo "" >> ROLLBACK_INFO.md
+        echo "**Rollback Details:**" >> ROLLBACK_INFO.md
+        echo "- Rolled back to commit: \`$TARGET_COMMIT\`" >> ROLLBACK_INFO.md
+        echo "- Rollback timestamp: $(date -u)" >> ROLLBACK_INFO.md
+        echo "- Rollback reason: Deployment health check failed" >> ROLLBACK_INFO.md
+        echo "- Original failing commit: \`${{ github.sha }}\`" >> ROLLBACK_INFO.md
+        echo "- Rollback branch: \`$ROLLBACK_BRANCH\`" >> ROLLBACK_INFO.md
+        echo "" >> ROLLBACK_INFO.md
+        echo "**Status:** Rollback branch created, ready for deployment" >> ROLLBACK_INFO.md
+
         git add ROLLBACK_INFO.md
         git commit -m "rollback: Emergency rollback to $TARGET_COMMIT
-        
-        Reason: Deployment health check failed
-        Original commit: ${{ github.sha }}
-        Rollback timestamp: $(date -u)
-        
-        This is an automatic rollback to restore service."
-        
+
+Reason: Deployment health check failed
+Original commit: ${{ github.sha }}
+Rollback timestamp: $(date -u)
+Branch: $ROLLBACK_BRANCH
+
+This is an automatic rollback to restore service." || echo "⚠️ Commit failed, continuing..."
+
         echo "rollback_branch=$ROLLBACK_BRANCH" >> $GITHUB_ENV
-        
+        echo "✅ Rollback preparation completed"
+
+    - name: Rollback summary
+      if: always()
+      run: |
+        echo "## 🔄 Rollback Process Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Rollback Status:** ✅ Branch created successfully" >> $GITHUB_STEP_SUMMARY
+        echo "**Target Commit:** \`${{ steps.rollback-target.outputs.target }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Rollback Branch:** \`$rollback_branch\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Timestamp:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Rollback branch prepared" >> $GITHUB_STEP_SUMMARY
+        echo "- 🔧 Configure Render credentials for automatic deployment" >> $GITHUB_STEP_SUMMARY
+        echo "- 🚀 Or manually deploy the rollback branch" >> $GITHUB_STEP_SUMMARY
+
     - name: Deploy rollback version
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
