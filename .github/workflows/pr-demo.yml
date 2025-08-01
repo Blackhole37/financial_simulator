@@ -1,0 +1,350 @@
+name: PR Demo - Failed → Fixed Pipeline
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:  # Manual trigger for demonstration
+
+jobs:
+  # Job 1: Intentionally failing job (demonstrates failure)
+  failing-tests:
+    name: Failing Tests Demo
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'demo-fail') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+        
+    - name: Demonstrate failing test
+      run: |
+        echo "🧪 Running tests that will fail..."
+        python -c "
+        import sys
+        print('❌ Test 1: Syntax Error Test')
+        try:
+            exec('print(\"missing closing quote)')
+        except SyntaxError as e:
+            print(f'   Syntax Error: {e}')
+            sys.exit(1)
+        "
+        
+    - name: This step won't run due to failure
+      run: |
+        echo "This step should not execute due to previous failure"
+
+  # Job 2: Code quality issues (demonstrates linting failures)
+  code-quality-issues:
+    name: Code Quality Issues Demo
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'demo-fail') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install linting tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort
+        
+    - name: Create file with code quality issues
+      run: |
+        cat > bad_code_demo.py << 'EOF'
+        # This file has intentional code quality issues
+        import os,sys,json    # Multiple imports on one line
+        import unused_module  # Unused import
+        
+        def bad_function( x,y ):  # Bad spacing
+            if x==y:  # No spaces around operator
+                return x+y  # No spaces around operator
+            else:
+                return x-y
+        
+        # Line too long - this is a very long line that exceeds the recommended 79 character limit for Python code according to PEP 8 style guide
+        
+        def another_function():
+            pass  # Function with no docstring
+        
+        # Trailing whitespace on next line    
+        
+        EOF
+        
+    - name: Run linting (will fail)
+      run: |
+        echo "🔍 Running linting checks..."
+        echo "❌ Expected failures:"
+        flake8 bad_code_demo.py || echo "Linting failed as expected"
+        
+    - name: Check code formatting (will fail)
+      run: |
+        echo "🎨 Checking code formatting..."
+        black --check bad_code_demo.py || echo "Formatting check failed as expected"
+        
+    - name: Check import sorting (will fail)
+      run: |
+        echo "📦 Checking import sorting..."
+        isort --check-only bad_code_demo.py || echo "Import sorting failed as expected"
+
+  # Job 3: Security issues (demonstrates security scan failures)
+  security-issues:
+    name: Security Issues Demo
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'demo-fail') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+        
+    - name: Create file with security issues
+      run: |
+        cat > insecure_code_demo.py << 'EOF'
+        # This file has intentional security issues
+        import os
+        import subprocess
+        import pickle
+        
+        # Security issue: Using shell=True
+        def run_command(user_input):
+            subprocess.call(user_input, shell=True)
+        
+        # Security issue: Using eval
+        def evaluate_expression(expr):
+            return eval(expr)
+        
+        # Security issue: Hardcoded password
+        PASSWORD = "admin123"
+        API_KEY = "sk-1234567890abcdef"
+        
+        # Security issue: Using pickle.loads on untrusted data
+        def load_data(data):
+            return pickle.loads(data)
+        
+        # Security issue: SQL injection vulnerability
+        def get_user(user_id):
+            query = f"SELECT * FROM users WHERE id = {user_id}"
+            return query
+        
+        EOF
+        
+    - name: Run security scan (will fail)
+      run: |
+        echo "🔒 Running security scan..."
+        echo "❌ Expected security issues:"
+        bandit -r . -f json || echo "Security scan failed as expected"
+        
+    - name: Check for vulnerable dependencies
+      run: |
+        echo "🛡️ Checking for vulnerable dependencies..."
+        # Create a requirements file with known vulnerable packages
+        echo "django==1.0" > vulnerable_requirements.txt
+        echo "requests==2.0.0" >> vulnerable_requirements.txt
+        safety check -r vulnerable_requirements.txt || echo "Vulnerability check failed as expected"
+
+  # Job 4: Fixed version (demonstrates successful pipeline after fixes)
+  fixed-pipeline:
+    name: Fixed Pipeline Demo
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'demo-fix') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest flake8 black isort bandit safety
+        
+    - name: Create fixed code
+      run: |
+        cat > fixed_code_demo.py << 'EOF'
+        """
+        This file demonstrates proper code quality and security practices.
+        """
+        import json
+        import os
+        import sys
+        from typing import Dict, List, Optional
+        
+        
+        def add_numbers(x: int, y: int) -> int:
+            """
+            Add two numbers together.
+            
+            Args:
+                x: First number
+                y: Second number
+                
+            Returns:
+                Sum of x and y
+            """
+            return x + y
+        
+        
+        def process_data(data: Dict) -> Optional[Dict]:
+            """
+            Process data safely with proper error handling.
+            
+            Args:
+                data: Input data dictionary
+                
+            Returns:
+                Processed data or None if processing fails
+            """
+            try:
+                if not isinstance(data, dict):
+                    return None
+                
+                processed = {
+                    "status": "success",
+                    "data": data,
+                    "timestamp": "2025-01-23T10:00:00Z"
+                }
+                return processed
+            except Exception as e:
+                print(f"Error processing data: {e}")
+                return None
+        
+        
+        def main() -> None:
+            """Main function demonstrating proper code structure."""
+            print("✅ Fixed code demo")
+            
+            result = add_numbers(5, 3)
+            print(f"Addition result: {result}")
+            
+            test_data = {"key": "value"}
+            processed = process_data(test_data)
+            if processed:
+                print(f"Processed data: {json.dumps(processed, indent=2)}")
+        
+        
+        if __name__ == "__main__":
+            main()
+        EOF
+        
+    - name: Run linting (will pass)
+      run: |
+        echo "🔍 Running linting checks..."
+        flake8 fixed_code_demo.py
+        echo "✅ Linting passed"
+        
+    - name: Check code formatting (will pass)
+      run: |
+        echo "🎨 Checking code formatting..."
+        black --check fixed_code_demo.py
+        echo "✅ Code formatting passed"
+        
+    - name: Check import sorting (will pass)
+      run: |
+        echo "📦 Checking import sorting..."
+        isort --check-only fixed_code_demo.py
+        echo "✅ Import sorting passed"
+        
+    - name: Run security scan (will pass)
+      run: |
+        echo "🔒 Running security scan..."
+        bandit -r fixed_code_demo.py
+        echo "✅ Security scan passed"
+        
+    - name: Run tests (will pass)
+      run: |
+        echo "🧪 Running tests..."
+        python -c "
+        import sys
+        sys.path.append('.')
+        
+        # Import and test the fixed code
+        exec(open('fixed_code_demo.py').read())
+        
+        # Run some basic tests
+        assert add_numbers(2, 3) == 5
+        assert add_numbers(0, 0) == 0
+        assert add_numbers(-1, 1) == 0
+        
+        test_data = {'test': 'value'}
+        result = process_data(test_data)
+        assert result is not None
+        assert result['status'] == 'success'
+        
+        print('✅ All tests passed')
+        "
+        
+    - name: Integration test
+      run: |
+        echo "🔗 Running integration tests..."
+        python fixed_code_demo.py
+        echo "✅ Integration tests passed"
+        
+    - name: Final validation
+      run: |
+        echo "🎉 Pipeline Success Summary:"
+        echo "✅ Code quality checks passed"
+        echo "✅ Security scans passed"
+        echo "✅ Unit tests passed"
+        echo "✅ Integration tests passed"
+        echo "✅ All validations completed successfully"
+
+  # Job 5: Summary report
+  demo-summary:
+    name: Demo Summary Report
+    runs-on: ubuntu-latest
+    needs: [failing-tests, code-quality-issues, security-issues, fixed-pipeline]
+    if: always()  # Run even if previous jobs fail
+    
+    steps:
+    - name: Generate demo summary
+      run: |
+        echo "📊 PR Demo Summary Report"
+        echo "========================="
+        echo ""
+        echo "🔴 Failed Pipeline Demonstrations:"
+        echo "  - Syntax errors and test failures"
+        echo "  - Code quality issues (linting, formatting)"
+        echo "  - Security vulnerabilities"
+        echo ""
+        echo "🟢 Fixed Pipeline Demonstration:"
+        echo "  - Clean, well-formatted code"
+        echo "  - Proper security practices"
+        echo "  - Comprehensive testing"
+        echo "  - All quality gates passed"
+        echo ""
+        echo "📋 Key Learnings:"
+        echo "  - CI/CD pipeline catches issues early"
+        echo "  - Multiple quality gates ensure code quality"
+        echo "  - Security scanning prevents vulnerabilities"
+        echo "  - Proper fixes lead to successful deployments"
+        echo ""
+        echo "✅ Demo completed successfully!"
