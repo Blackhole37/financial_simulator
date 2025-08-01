@@ -37,7 +37,12 @@ jobs:
     - name: Get service URL
       id: get-url
       run: |
-        SERVICE_URL="${{ secrets.RENDER_SERVICE_URL || 'https://financial-simulator.onrender.com' }}"
+        if [ -n "${{ secrets.RENDER_SERVICE_URL }}" ]; then
+          SERVICE_URL="${{ secrets.RENDER_SERVICE_URL }}"
+        else
+          SERVICE_URL="https://financial-simulator.onrender.com"
+          echo "⚠️ Using default service URL (RENDER_SERVICE_URL secret not set)"
+        fi
         echo "url=$SERVICE_URL" >> $GITHUB_OUTPUT
         echo "🌐 Service URL: $SERVICE_URL"
         
@@ -51,26 +56,27 @@ jobs:
       run: |
         SERVICE_URL="${{ steps.get-url.outputs.url }}"
         HEALTHY=false
-        
+
         echo "🔍 Running comprehensive health checks..."
-        
+        echo "⚠️ Note: This is a demo - health checks may fail if service is not deployed"
+
         # Test 1: Basic connectivity
         echo "Test 1: Basic connectivity"
-        if curl -f -s --max-time 30 "$SERVICE_URL" > /dev/null; then
+        if curl -f -s --max-time 10 "$SERVICE_URL" > /dev/null 2>&1; then
           echo "✅ Basic connectivity: PASS"
           BASIC_CONN=true
         else
-          echo "❌ Basic connectivity: FAIL"
+          echo "❌ Basic connectivity: FAIL (expected if service not deployed)"
           BASIC_CONN=false
         fi
         
         # Test 2: Health endpoint
         echo "Test 2: Health endpoint"
-        if curl -f -s --max-time 30 "$SERVICE_URL/health" | grep -q "healthy\|ok"; then
+        if curl -f -s --max-time 10 "$SERVICE_URL/health" 2>/dev/null | grep -q "healthy\|ok"; then
           echo "✅ Health endpoint: PASS"
           HEALTH_EP=true
         else
-          echo "❌ Health endpoint: FAIL"
+          echo "❌ Health endpoint: FAIL (expected if service not deployed)"
           HEALTH_EP=false
         fi
         
@@ -101,7 +107,8 @@ jobs:
           echo "🎉 Overall health: HEALTHY"
         else
           HEALTHY=false
-          echo "💥 Overall health: UNHEALTHY"
+          echo "💥 Overall health: UNHEALTHY (this is expected for demo purposes)"
+          echo "ℹ️ In a real deployment, this would trigger automatic rollback"
         fi
         
         echo "healthy=$HEALTHY" >> $GITHUB_OUTPUT

@@ -1,9 +1,10 @@
 name: Deployment Health Monitor
 
 on:
-  schedule:
-    # Run every 5 minutes to monitor deployment health
-    - cron: '*/5 * * * *'
+  # Disabled automatic scheduling for demo - uncomment to enable
+  # schedule:
+  #   # Run every 5 minutes to monitor deployment health
+  #   - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       immediate_check:
