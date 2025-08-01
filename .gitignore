@@ -1,7 +1,7 @@
-# Created by https://www.toptal.com/developers/gitignore/api/react,node,vue,nextjs
-# Edit at https://www.toptal.com/developers/gitignore?templates=react,node,vue,nextjs
+# Combined .gitignore for Gurukul AI Project
+# Frontend (React, Node.js, Next.js, Vue) and Backend (Python, FastAPI)
 
-### NextJS ###
+### Frontend - NextJS ###
 # dependencies
 /node_modules
 /.pnp
@@ -37,7 +37,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-### Node ###
+### Node.js ###
 # Logs
 logs
 *.log
@@ -107,13 +107,6 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
@@ -167,17 +160,13 @@ dist
 # Serverless Webpack directories
 .webpack/
 
-# Optional stylelint cache
-
 # SvelteKit build / generate output
 .svelte-kit
 
-### react ###
+### React ###
 .DS_*
 **/*.backup.*
 **/*.back.*
-
-node_modules
 
 *.sublime*
 
@@ -187,13 +176,231 @@ sketch
 
 ### Vue ###
 # gitignore template for Vue.js projects
-#
-# Recommended template: Node.gitignore
-
-# TODO: where does this rule come from?
 docs/_book
 
-# TODO: where does this rule come from?
-test/
+### Backend - Python ###
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+*.env
 
-# End of https://www.toptal.com/developers/gitignore/api/react,node,vue,nextjs
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.ENV/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# celery beat schedule file
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Output directories
+output/
+monthly_output/
+temp_pdfs/
+
+# Cache directories
+.cache/
+*.cache
+
+# Redis dump files
+dump.rdb
+
+# MongoDB data
+data/db/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# AgentOps logs
+agentops.log
+*.agentops
+
+# Financial simulation specific
+*_person_history.json
+*_reflection_*.json
+*_simulation*.json
+
+# PDF uploads (keep structure but ignore content)
+temp_pdfs/*.pdf
+
+# Model files
+*.pkl
+*.joblib
+*.model
+
+# API keys and credentials
+credentials.json
+service-account.json
+*.key
+*.crt
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Compressed files
+*.zip
+*.tar.gz
+*.rar
+
+# Local configuration
+local_settings.py
+local_config.py
+
+# Streamlit
+.streamlit/
+
+# FastAPI
+.pytest_cache/
+
+# UV lock file (Python package manager)
+uv.lock
+
+# Forecast engine outputs
+forecast_*.json
+forecast_simulation_logs.txt
+
+# Enhanced logging outputs
+enhanced_logging_*.json
+
+# TTS outputs
+tts_outputs/
+*.mp3
+*.wav
+
+# Audio cache
+temp_audio_cache/
+downloaded_audio/
