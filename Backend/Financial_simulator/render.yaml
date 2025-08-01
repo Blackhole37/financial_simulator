@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: financial-simulator-api
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      cd Backend/Financial_simulator
+      pip install -r requirements.txt
+    startCommand: |
+      cd Backend/Financial_simulator/Financial_simulator
+      python -m uvicorn langgraph_api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 10000
+      # Optional environment variables (set these in Render dashboard if needed)
+      # - key: MONGODB_URI
+      #   value: your_mongodb_connection_string
+      # - key: REDIS_URL  
+      #   value: your_redis_connection_string
+      # - key: OPENAI_API_KEY
+      #   value: your_openai_api_key
+      # - key: GROQ_API_KEY
+      #   value: your_groq_api_key
+      # - key: AGENTOPS_API_KEY
+      #   value: your_agentops_api_key
