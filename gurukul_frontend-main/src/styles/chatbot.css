@@ -1,0 +1,212 @@
+/* Custom scrollbar styles for the chatbot */
+.chat-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  border: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Message animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-animation {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Typing indicator animation */
+@keyframes blink {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  margin: 0 2px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  display: inline-block;
+  animation: blink 1.4s infinite both;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Paperclip icon animation */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.paperclip-icon {
+  transition: all 0.2s ease;
+}
+
+.paperclip-icon:hover {
+  color: #ff9933;
+  animation: pulse 1s infinite;
+}
+
+/* Textarea styling */
+.chatbot-textarea {
+  font-family: "Inter", "Poppins", sans-serif;
+  transition: height 0.2s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+  overscroll-behavior: contain;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-wrap: wrap;
+  overflow-wrap: break-word;
+}
+
+/* Custom scrollbar for textarea */
+.chatbot-textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chatbot-textarea::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.chatbot-textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.chatbot-textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 153, 51, 0.3);
+}
+
+/* Textarea styling for chatbot */
+textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  font-family: "Inter", "Poppins", sans-serif;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  height: 46px !important; /* Force fixed height */
+  max-width: 100%;
+}
+
+/* Custom scrollbar for textarea */
+textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 153, 51, 0.3);
+}
+
+/* Ensure the textarea container doesn't expand */
+.flex-grow.min-w-0 {
+  max-width: calc(100% - 140px); /* Account for buttons */
+  overflow: hidden;
+}
+
+/* Message bubble styling */
+.message-animation {
+  width: 100%;
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Force text wrapping in message bubbles */
+.message-animation p {
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: pre-wrap !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Ensure message containers don't expand */
+.max-w-3xl {
+  max-width: min(100%, 48rem) !important;
+  width: auto !important;
+}
+
+/* Twemoji styling for better emoji appearance */
+.twemoji {
+  height: 1.2em;
+  width: 1.2em;
+  margin: 0 0.1em;
+  vertical-align: -0.1em;
+  display: inline-block;
+}
+
+/* Ensure Twemoji emojis are properly sized and aligned */
+img.emoji {
+  height: 1.2em;
+  width: 1.2em;
+  margin: 0 0.1em;
+  vertical-align: -0.1em;
+  display: inline-block;
+}

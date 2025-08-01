@@ -1,0 +1,249 @@
+name: Deployment Health Monitor
+
+on:
+  schedule:
+    # Run every 5 minutes to monitor deployment health
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      immediate_check:
+        description: 'Run immediate health check'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL || 'https://financial-simulator.onrender.com' }}
+
+jobs:
+  monitor-deployment:
+    name: 🔍 Monitor Deployment Health
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Comprehensive health monitoring
+      id: health-monitor
+      run: |
+        echo "🔍 Starting comprehensive health monitoring..."
+        echo "Service URL: $SERVICE_URL"
+        
+        # Initialize counters
+        PASSED_TESTS=0
+        TOTAL_TESTS=6
+        CRITICAL_FAILURES=0
+        
+        # Test 1: Basic HTTP connectivity
+        echo "🌐 Test 1: Basic HTTP connectivity"
+        if timeout 30 curl -f -s "$SERVICE_URL" > /dev/null 2>&1; then
+          echo "✅ Basic connectivity: PASS"
+          ((PASSED_TESTS++))
+        else
+          echo "❌ Basic connectivity: FAIL"
+          ((CRITICAL_FAILURES++))
+        fi
+        
+        # Test 2: Health endpoint response
+        echo "🏥 Test 2: Health endpoint response"
+        HEALTH_RESPONSE=$(timeout 30 curl -f -s "$SERVICE_URL/health" 2>/dev/null || echo "FAILED")
+        if echo "$HEALTH_RESPONSE" | grep -q "healthy\|ok\|status"; then
+          echo "✅ Health endpoint: PASS"
+          echo "Response: $HEALTH_RESPONSE"
+          ((PASSED_TESTS++))
+        else
+          echo "❌ Health endpoint: FAIL"
+          echo "Response: $HEALTH_RESPONSE"
+          ((CRITICAL_FAILURES++))
+        fi
+        
+        # Test 3: API documentation accessibility
+        echo "📚 Test 3: API documentation accessibility"
+        if timeout 30 curl -f -s "$SERVICE_URL/docs" > /dev/null 2>&1; then
+          echo "✅ API docs: PASS"
+          ((PASSED_TESTS++))
+        else
+          echo "❌ API docs: FAIL"
+        fi
+        
+        # Test 4: Response time performance
+        echo "⚡ Test 4: Response time performance"
+        RESPONSE_TIME=$(timeout 30 curl -o /dev/null -s -w '%{time_total}' "$SERVICE_URL/health" 2>/dev/null || echo "999")
+        if (( $(echo "$RESPONSE_TIME < 10.0" | bc -l 2>/dev/null || echo "0") )); then
+          echo "✅ Response time (${RESPONSE_TIME}s): PASS"
+          ((PASSED_TESTS++))
+        else
+          echo "❌ Response time (${RESPONSE_TIME}s): FAIL"
+        fi
+        
+        # Test 5: HTTP status codes
+        echo "🔢 Test 5: HTTP status codes"
+        STATUS_CODE=$(timeout 30 curl -o /dev/null -s -w '%{http_code}' "$SERVICE_URL/health" 2>/dev/null || echo "000")
+        if [ "$STATUS_CODE" = "200" ]; then
+          echo "✅ HTTP status ($STATUS_CODE): PASS"
+          ((PASSED_TESTS++))
+        else
+          echo "❌ HTTP status ($STATUS_CODE): FAIL"
+          if [ "$STATUS_CODE" = "000" ] || [ "$STATUS_CODE" = "500" ] || [ "$STATUS_CODE" = "502" ] || [ "$STATUS_CODE" = "503" ]; then
+            ((CRITICAL_FAILURES++))
+          fi
+        fi
+        
+        # Test 6: Service uptime check
+        echo "⏰ Test 6: Service uptime check"
+        UPTIME_RESPONSE=$(timeout 30 curl -f -s "$SERVICE_URL/" 2>/dev/null || echo "FAILED")
+        if [ "$UPTIME_RESPONSE" != "FAILED" ] && [ -n "$UPTIME_RESPONSE" ]; then
+          echo "✅ Service uptime: PASS"
+          ((PASSED_TESTS++))
+        else
+          echo "❌ Service uptime: FAIL"
+        fi
+        
+        # Calculate health score
+        HEALTH_SCORE=$((PASSED_TESTS * 100 / TOTAL_TESTS))
+        
+        echo ""
+        echo "📊 Health Monitoring Results:"
+        echo "- Passed Tests: $PASSED_TESTS/$TOTAL_TESTS"
+        echo "- Health Score: $HEALTH_SCORE%"
+        echo "- Critical Failures: $CRITICAL_FAILURES"
+        
+        # Determine overall health status
+        if [ $CRITICAL_FAILURES -gt 0 ]; then
+          HEALTH_STATUS="CRITICAL"
+          echo "💥 Overall Status: CRITICAL - Immediate attention required!"
+        elif [ $HEALTH_SCORE -ge 80 ]; then
+          HEALTH_STATUS="HEALTHY"
+          echo "✅ Overall Status: HEALTHY"
+        elif [ $HEALTH_SCORE -ge 60 ]; then
+          HEALTH_STATUS="DEGRADED"
+          echo "⚠️ Overall Status: DEGRADED - Monitoring required"
+        else
+          HEALTH_STATUS="UNHEALTHY"
+          echo "❌ Overall Status: UNHEALTHY - Action required"
+        fi
+        
+        # Set outputs
+        echo "health_status=$HEALTH_STATUS" >> $GITHUB_OUTPUT
+        echo "health_score=$HEALTH_SCORE" >> $GITHUB_OUTPUT
+        echo "critical_failures=$CRITICAL_FAILURES" >> $GITHUB_OUTPUT
+        echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
+        echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+        
+    - name: Log health metrics
+      run: |
+        echo "## 📊 Deployment Health Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Service:** $SERVICE_URL" >> $GITHUB_STEP_SUMMARY
+        echo "**Timestamp:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Results" >> $GITHUB_STEP_SUMMARY
+        echo "- **Health Score:** ${{ steps.health-monitor.outputs.health_score }}%" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status:** ${{ steps.health-monitor.outputs.health_status }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tests Passed:** ${{ steps.health-monitor.outputs.passed_tests }}/${{ steps.health-monitor.outputs.total_tests }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Critical Failures:** ${{ steps.health-monitor.outputs.critical_failures }}" >> $GITHUB_STEP_SUMMARY
+        
+        # Add status emoji
+        case "${{ steps.health-monitor.outputs.health_status }}" in
+          "HEALTHY") echo "- **Overall:** ✅ Service is operating normally" >> $GITHUB_STEP_SUMMARY ;;
+          "DEGRADED") echo "- **Overall:** ⚠️ Service is degraded but functional" >> $GITHUB_STEP_SUMMARY ;;
+          "UNHEALTHY") echo "- **Overall:** ❌ Service has significant issues" >> $GITHUB_STEP_SUMMARY ;;
+          "CRITICAL") echo "- **Overall:** 💥 Service is in critical state" >> $GITHUB_STEP_SUMMARY ;;
+        esac
+        
+    - name: Trigger rollback if critical
+      if: steps.health-monitor.outputs.health_status == 'CRITICAL'
+      run: |
+        echo "💥 CRITICAL health status detected - triggering rollback workflow"
+        
+        # Trigger the rollback workflow
+        curl -X POST \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/actions/workflows/rollback-on-failure.yml/dispatches" \
+          -d '{"ref":"main","inputs":{"force_rollback":"true"}}'
+        
+        echo "🔄 Rollback workflow triggered due to critical health status"
+        
+    - name: Create issue for degraded service
+      if: steps.health-monitor.outputs.health_status == 'DEGRADED' || steps.health-monitor.outputs.health_status == 'UNHEALTHY'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const healthStatus = '${{ steps.health-monitor.outputs.health_status }}';
+          const healthScore = '${{ steps.health-monitor.outputs.health_score }}';
+          const criticalFailures = '${{ steps.health-monitor.outputs.critical_failures }}';
+          
+          const title = `🚨 Service Health Alert: ${healthStatus} Status Detected`;
+          const body = `## Service Health Alert
+          
+          **Status:** ${healthStatus}
+          **Health Score:** ${healthScore}%
+          **Critical Failures:** ${criticalFailures}
+          **Service URL:** ${{ env.SERVICE_URL }}
+          **Detection Time:** ${new Date().toISOString()}
+          
+          ### Recommended Actions
+          ${healthStatus === 'DEGRADED' ? 
+            '- Monitor service closely\n- Check logs for warnings\n- Consider scaling if needed' :
+            '- Investigate service issues immediately\n- Check application logs\n- Consider rollback if issues persist'
+          }
+          
+          ### Health Check Details
+          This alert was generated by the automated deployment health monitor.
+          
+          **Auto-generated by:** Deployment Health Monitor
+          `;
+          
+          // Check if similar issue already exists
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'health-alert'
+          });
+          
+          const existingIssue = issues.data.find(issue => 
+            issue.title.includes('Service Health Alert')
+          );
+          
+          if (!existingIssue) {
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['health-alert', 'monitoring', healthStatus.toLowerCase()]
+            });
+            console.log('Created health alert issue');
+          } else {
+            console.log('Health alert issue already exists');
+          }
+
+  alert-on-failure:
+    name: 🚨 Alert on Monitoring Failure
+    runs-on: ubuntu-latest
+    needs: monitor-deployment
+    if: failure()
+    
+    steps:
+    - name: Send failure alert
+      run: |
+        echo "🚨 Health monitoring workflow failed!"
+        echo "This could indicate:"
+        echo "- Network connectivity issues"
+        echo "- Service is completely down"
+        echo "- Monitoring script errors"
+        echo ""
+        echo "Manual investigation required."
+        
+        echo "## 🚨 Health Monitoring Failed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "The health monitoring workflow failed to complete." >> $GITHUB_STEP_SUMMARY
+        echo "This requires immediate manual investigation." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Possible Causes:**" >> $GITHUB_STEP_SUMMARY
+        echo "- Service is completely unreachable" >> $GITHUB_STEP_SUMMARY
+        echo "- Network connectivity issues" >> $GITHUB_STEP_SUMMARY
+        echo "- Monitoring script errors" >> $GITHUB_STEP_SUMMARY
