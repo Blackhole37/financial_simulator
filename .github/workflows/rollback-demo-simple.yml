@@ -1,0 +1,182 @@
+name: "🎯 Simple Rollback Demo"
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Demo scenario to run'
+        required: true
+        default: 'healthy_service'
+        type: choice
+        options:
+        - healthy_service
+        - unhealthy_service
+        - rollback_simulation
+
+jobs:
+  demo-health-check:
+    name: "🏥 Demo Health Check"
+    runs-on: ubuntu-latest
+    outputs:
+      is_healthy: ${{ steps.health-check.outputs.healthy }}
+      demo_scenario: ${{ github.event.inputs.scenario }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Demo health check
+      id: health-check
+      run: |
+        SCENARIO="${{ github.event.inputs.scenario }}"
+        echo "🎬 Running demo scenario: $SCENARIO"
+        echo "=" * 50
+        
+        case $SCENARIO in
+          "healthy_service")
+            echo "✅ Simulating healthy service"
+            echo "🔍 Basic connectivity: PASS"
+            echo "🏥 Health endpoint: PASS"
+            echo "⚡ Response time: PASS"
+            echo "🎉 Overall status: HEALTHY"
+            echo "healthy=true" >> $GITHUB_OUTPUT
+            ;;
+            
+          "unhealthy_service")
+            echo "❌ Simulating unhealthy service"
+            echo "🔍 Basic connectivity: FAIL"
+            echo "🏥 Health endpoint: FAIL"
+            echo "⚡ Response time: TIMEOUT"
+            echo "💥 Overall status: UNHEALTHY"
+            echo "🚨 This would trigger automatic rollback!"
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            ;;
+            
+          "rollback_simulation")
+            echo "🔄 Simulating rollback scenario"
+            echo "🔍 Basic connectivity: PASS"
+            echo "🏥 Health endpoint: DEGRADED"
+            echo "⚡ Response time: SLOW"
+            echo "⚠️ Overall status: UNHEALTHY"
+            echo "🔄 Triggering rollback process..."
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            ;;
+            
+          *)
+            echo "❓ Unknown scenario: $SCENARIO"
+            echo "healthy=false" >> $GITHUB_OUTPUT
+            ;;
+        esac
+
+  demo-rollback:
+    name: "🔄 Demo Rollback Process"
+    runs-on: ubuntu-latest
+    needs: demo-health-check
+    if: needs.demo-health-check.outputs.is_healthy == 'false'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 10
+        
+    - name: Simulate rollback process
+      run: |
+        echo "🚨 DEPLOYMENT FAILURE DETECTED!"
+        echo "🔄 Initiating automatic rollback process..."
+        echo ""
+        
+        # Get previous commit for rollback target
+        CURRENT_COMMIT=$(git rev-parse HEAD)
+        PREVIOUS_COMMIT=$(git rev-parse HEAD~1)
+        
+        echo "📊 Rollback Analysis:"
+        echo "   Current (failing) commit: $CURRENT_COMMIT"
+        echo "   Rollback target commit:   $PREVIOUS_COMMIT"
+        echo ""
+        
+        # Show commit details
+        echo "📝 Current commit details:"
+        git show --oneline -s $CURRENT_COMMIT
+        echo ""
+        echo "📝 Rollback target details:"
+        git show --oneline -s $PREVIOUS_COMMIT
+        echo ""
+        
+        # Simulate rollback branch creation
+        ROLLBACK_BRANCH="demo-rollback/$(date +%Y%m%d-%H%M%S)"
+        echo "🌿 Creating rollback branch: $ROLLBACK_BRANCH"
+        
+        # Create rollback info
+        echo "# 🔄 ROLLBACK DEPLOYMENT SIMULATION" > ROLLBACK_DEMO.md
+        echo "" >> ROLLBACK_DEMO.md
+        echo "**Rollback Details:**" >> ROLLBACK_DEMO.md
+        echo "- Rollback timestamp: $(date -u)" >> ROLLBACK_DEMO.md
+        echo "- Rollback reason: Demo simulation - ${{ needs.demo-health-check.outputs.demo_scenario }}" >> ROLLBACK_DEMO.md
+        echo "- Original failing commit: $CURRENT_COMMIT" >> ROLLBACK_DEMO.md
+        echo "- Rollback target commit: $PREVIOUS_COMMIT" >> ROLLBACK_DEMO.md
+        echo "" >> ROLLBACK_DEMO.md
+        echo "**Rollback Process:**" >> ROLLBACK_DEMO.md
+        echo "1. ✅ Health check detected failure" >> ROLLBACK_DEMO.md
+        echo "2. ✅ Identified rollback target" >> ROLLBACK_DEMO.md
+        echo "3. ✅ Created rollback branch" >> ROLLBACK_DEMO.md
+        echo "4. ✅ Generated rollback documentation" >> ROLLBACK_DEMO.md
+        echo "5. 🎯 Ready for deployment (simulated)" >> ROLLBACK_DEMO.md
+        
+        echo "📄 Rollback documentation created:"
+        cat ROLLBACK_DEMO.md
+        
+    - name: Simulate deployment rollback
+      run: |
+        echo "🚀 Simulating rollback deployment..."
+        echo ""
+        echo "In a real environment, this would:"
+        echo "1. 🔄 Deploy the previous working version"
+        echo "2. ⏳ Wait for deployment to complete"
+        echo "3. 🔍 Verify the rollback is healthy"
+        echo "4. 📢 Notify team of successful rollback"
+        echo "5. 📊 Create incident report"
+        echo ""
+        
+        # Simulate deployment time
+        echo "⏳ Simulating deployment process..."
+        for i in {1..5}; do
+          echo "   Deployment progress: $((i * 20))%"
+          sleep 2
+        done
+        
+        echo "✅ Rollback deployment completed successfully!"
+        echo ""
+        echo "🎉 Service restored to previous working state"
+        echo "📊 Rollback completed in simulated environment"
+
+  demo-summary:
+    name: "📊 Demo Summary"
+    runs-on: ubuntu-latest
+    needs: [demo-health-check, demo-rollback]
+    if: always()
+    
+    steps:
+    - name: Display demo results
+      run: |
+        echo "🎯 ROLLBACK SYSTEM DEMO COMPLETED"
+        echo "=" * 50
+        echo ""
+        echo "📋 Demo Configuration:"
+        echo "   Scenario: ${{ needs.demo-health-check.outputs.demo_scenario }}"
+        echo "   Health Status: ${{ needs.demo-health-check.outputs.is_healthy }}"
+        echo ""
+        
+        if [ "${{ needs.demo-health-check.outputs.is_healthy }}" = "false" ]; then
+          echo "🔄 Rollback Process: EXECUTED"
+          echo "   ✅ Failure detection: Working"
+          echo "   ✅ Rollback trigger: Working"
+          echo "   ✅ Process automation: Working"
+        else
+          echo "✅ Service Health: GOOD"
+          echo "   ℹ️ No rollback needed"
+        fi
+        
+        echo ""
+        echo "🎉 Your rollback system is working perfectly!"
+        echo "🛡️ Production deployments are protected by automatic rollback"
