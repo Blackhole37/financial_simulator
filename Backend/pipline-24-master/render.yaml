@@ -1,0 +1,31 @@
+services:
+  # Pipeline Service - Lesson Generation with TTS
+  - type: web
+    name: gurukul-pipeline-service
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start_production.py
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: OPENAI_API_KEY
+        sync: false  # Required for lesson generation
+      - key: HUGGINGFACE_API_TOKEN
+        sync: false  # Required for some models
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+      - key: CORS_ORIGINS
+        value: "*"  # Restrict in production
+      - key: TTS_ENABLED
+        value: "true"
+      - key: EXTERNAL_SERVER_URL
+        value: ""  # Optional external server forwarding
+    healthCheckPath: /
+    disk:
+      name: pipeline-storage
+      mountPath: /opt/render/project/src/storage
+      sizeGB: 1

@@ -1,0 +1,36 @@
+# Combined requirements for all services
+fastapi>=0.100.0
+uvicorn>=0.22.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+pydantic>=2.0.0
+python-multipart>=0.0.6
+
+# Database
+pymongo>=4.6.0
+motor>=3.3.0
+
+# LangChain and AI
+langchain>=0.1.12
+langchain-core>=0.1.32
+langchain-groq>=0.1.5
+langchain-openai>=0.1.5
+langchain-community>=0.0.29
+langchain-anthropic>=0.1.4
+langgraph>=0.0.30
+
+# Data processing
+pandas>=1.5.3
+numpy>=1.24.0
+PyMuPDF>=1.23.0
+
+# OCR (lightweight versions)
+pytesseract>=0.3.10
+pillow>=9.0.0
+
+# TTS
+pyttsx3>=2.90
+
+# Utilities
+backoff>=2.2.1
+agentops>=0.0.26

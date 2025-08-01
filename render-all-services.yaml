@@ -1,0 +1,98 @@
+services:
+  # Financial Simulator Service
+  - type: web
+    name: gurukul-financial-simulator
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: cd Backend/Financial_simulator && pip install -r requirements.txt
+    startCommand: cd Backend/Financial_simulator && python start_production.py
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src/Backend/Financial_simulator/Financial_simulator
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: gurukul-redis
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: AGENTOPS_API_KEY
+        sync: false
+      - key: PORT
+        value: 8002
+    healthCheckPath: /health
+
+  # API Data Service
+  - type: web
+    name: gurukul-api-data-service
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: cd Backend/api_data && pip install -r requirements.txt
+    startCommand: cd Backend/api_data && python start_production.py
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src/Backend/api_data
+      - key: MONGODB_URI
+        sync: false
+      - key: HUGGINGFACE_API_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PORT
+        value: 8001
+    healthCheckPath: /health
+
+  # Pipeline Service
+  - type: web
+    name: gurukul-pipeline-service
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: cd Backend/pipline-24-master && pip install -r requirements.txt
+    startCommand: cd Backend/pipline-24-master && python start_production.py
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src/Backend/pipline-24-master
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: HUGGINGFACE_API_TOKEN
+        sync: false
+      - key: PORT
+        value: 8000
+    healthCheckPath: /
+    disk:
+      name: pipeline-storage
+      mountPath: /opt/render/project/src/Backend/pipline-24-master/storage
+      sizeGB: 1
+
+  # TTS Service
+  - type: web
+    name: gurukul-tts-service
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: cd Backend/tts_service && pip install -r requirements.txt
+    startCommand: cd Backend/tts_service && python start_production.py
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src/Backend/tts_service
+      - key: PORT
+        value: 8003
+    healthCheckPath: /api/health
+    disk:
+      name: tts-storage
+      mountPath: /opt/render/project/src/Backend/tts_service/tts_outputs
+      sizeGB: 1
+
+  # Shared Redis Service
+  - type: redis
+    name: gurukul-redis
+    region: oregon
+    plan: starter
+    maxmemoryPolicy: allkeys-lru

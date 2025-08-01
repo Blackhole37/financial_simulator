@@ -1,0 +1,21 @@
+{
+  "user_id": "streamlit_user",
+  "simulation_id": "8f8854d5-7511-445f-a633-b375c5161268",
+  "timestamp": "2025-06-12T15:08:19.104791",
+  "data": {
+    "user_id": "streamlit_user",
+    "user_name": "vedant",
+    "age": 22,
+    "occupation": "Software Engineer",
+    "income_level": "<10,000",
+    "goal": "Save \u20b950,000 for emergency fund",
+    "risk_level": "Medium",
+    "starting_balance": 10000,
+    "monthly_earning": 15000,
+    "monthly_expenses": 5000,
+    "savings_target": 3000,
+    "financial_type": "Balanced",
+    "cashflow_context": "There is no previous summary"
+  },
+  "_id": "7f22ffb3-3a67-415c-9e66-bcbedf5e8a19"
+}

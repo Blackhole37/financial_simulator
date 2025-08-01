@@ -1,0 +1,27 @@
+services:
+  # TTS Service - Text-to-Speech Generation
+  - type: web
+    name: gurukul-tts-service
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start_production.py
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: PORT
+        value: 8002
+      - key: HOST
+        value: 0.0.0.0
+      - key: CORS_ORIGINS
+        value: "*"  # Restrict in production
+      - key: TTS_ENGINE
+        value: "pyttsx3"  # Default TTS engine
+      - key: OUTPUT_DIR
+        value: "tts_outputs"
+    healthCheckPath: /api/health
+    disk:
+      name: tts-storage
+      mountPath: /opt/render/project/src/tts_outputs
+      sizeGB: 1

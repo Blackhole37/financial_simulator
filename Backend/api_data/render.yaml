@@ -1,0 +1,25 @@
+services:
+  # API Data Service - RAG and OCR functionality
+  - type: web
+    name: gurukul-api-data-service
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start_production.py
+    envVars:
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: MONGODB_URI
+        sync: false  # Set manually to MongoDB Atlas connection string
+      - key: HUGGINGFACE_API_TOKEN
+        sync: false  # Required for some LangChain models
+      - key: OPENAI_API_KEY
+        sync: false  # If using OpenAI models
+      - key: PORT
+        value: 8001
+      - key: HOST
+        value: 0.0.0.0
+      - key: CORS_ORIGINS
+        value: "*"  # Restrict in production
+    healthCheckPath: /health
